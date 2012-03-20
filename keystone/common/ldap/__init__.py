@@ -14,4 +14,4 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from keystone.common.ldap.core import *
+#from keystone.common.ldap.core import *

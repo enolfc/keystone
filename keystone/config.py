@@ -97,6 +97,10 @@ def register_str(*args, **kw):
     group = _ensure_group(kw, conf)
     return conf.register_opt(cfg.StrOpt(*args, **kw), group=group)
 
+def register_list(*args, **kw):
+    conf = kw.pop('conf', CONF)
+    group = _ensure_group(kw, conf)
+    return conf.register_opt(cfg.ListOpt(*args, **kw), group=group)
 
 def register_cli_str(*args, **kw):
     conf = kw.pop('conf', CONF)
@@ -174,15 +178,31 @@ register_str('user_tree_dn', group='ldap',
 register_str('user_objectclass', group='ldap', default='inetOrgPerson')
 register_str('user_id_attribute', group='ldap', default='cn')
 
-register_str('tenant_tree_dn', group='ldap',
-             default='ou=Groups,dc=example,dc=com')
-register_str('tenant_objectclass', group='ldap', default='groupOfNames')
-register_str('tenant_id_attribute', group='ldap', default='cn')
-register_str('tenant_member_attribute', group='ldap', default='member')
+register_str('user_attrmap_name', group='ldap')
+register_str('user_attrmap_password', group='ldap')
+register_str('user_attrmap_description', group='ldap')
+register_str('user_attrmap_email', group='ldap')
+register_str('user_attrmap_enabled', group='ldap')
 
+register_str('ec2_tree_dn', group='ldap')
+register_str('ec2_objectclass', group='ldap')
+register_str('ec2_id_attribute', group='ldap')
 
-register_str('role_tree_dn', group='ldap',
-             default='ou=Roles,dc=example,dc=com')
-register_str('role_objectclass', group='ldap', default='organizationalRole')
-register_str('role_id_attribute', group='ldap', default='cn')
-register_str('role_member_attribute', group='ldap', default='roleOccupant')
+register_str('ec2_attrmap_secret', group='ldap')
+register_str('ec2_attrmap_access', group='ldap')
+
+register_str('default_tenant', group='ldap')
+register_list('default_roles', group='ldap', default = [])
+
+#register_str('tenant_tree_dn', group='ldap',
+#             default='ou=Groups,dc=example,dc=com')
+#register_str('tenant_objectclass', group='ldap', default='groupOfNames')
+#register_str('tenant_id_attribute', group='ldap', default='cn')
+#register_str('tenant_member_attribute', group='ldap', default='member')
+#
+#
+#register_str('role_tree_dn', group='ldap',
+#             default='ou=Roles,dc=example,dc=com')
+#register_str('role_objectclass', group='ldap', default='organizationalRole')
+#register_str('role_id_attribute', group='ldap', default='cn')
+#register_str('role_member_attribute', group='ldap', default='roleOccupant')
