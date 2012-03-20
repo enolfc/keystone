@@ -21,7 +21,6 @@ import os
 from keystone.common import logging
 from keystone.openstack.common import cfg
 
-
 gettext.install('keystone', unicode=1)
 
 
@@ -97,10 +96,12 @@ def register_str(*args, **kw):
     group = _ensure_group(kw, conf)
     return conf.register_opt(cfg.StrOpt(*args, **kw), group=group)
 
+
 def register_list(*args, **kw):
     conf = kw.pop('conf', CONF)
     group = _ensure_group(kw, conf)
     return conf.register_opt(cfg.ListOpt(*args, **kw), group=group)
+
 
 def register_cli_str(*args, **kw):
     conf = kw.pop('conf', CONF)
@@ -192,7 +193,7 @@ register_str('ec2_attrmap_secret', group='ldap')
 register_str('ec2_attrmap_access', group='ldap')
 
 register_str('default_tenant', group='ldap')
-register_list('default_roles', group='ldap', default = [])
+register_list('default_roles', group='ldap', default=[])
 
 #register_str('tenant_tree_dn', group='ldap',
 #             default='ou=Groups,dc=example,dc=com')

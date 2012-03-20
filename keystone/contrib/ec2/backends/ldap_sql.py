@@ -14,14 +14,14 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from keystone.contrib.ec2.backends.sql import Ec2 as SQLEc2
+from keystone import identity
+from keystone import config
 from keystone.common.ldap.wrapper import LdapWrapper
+from keystone.contrib.ec2.backends.sql import Ec2 as SQLEc2
 
 # to get the tenant_id
-from keystone import identity
-
-from keystone import config
 conf = config.CONF
+
 
 class EC2Ldap(LdapWrapper):
     options_name = "ec2"
@@ -29,7 +29,7 @@ class EC2Ldap(LdapWrapper):
     def _filter_cred(self, ref):
         if not ref:
             return ref
-        ref['user_id'] = ref.pop('id') 
+        ref['user_id'] = ref.pop('id')
         if conf.ldap.default_tenant:
             # get tenants from Identity API
             id_api = identity.Manager()

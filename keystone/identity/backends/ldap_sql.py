@@ -19,15 +19,18 @@ from keystone.common import logging
 from keystone.common.ldap.wrapper import LdapWrapper
 from keystone.identity.backends.sql import Identity as SQLIdentity
 
+CONF = config.CONF
+
+
 def _filter_user(user_ref):
     if user_ref:
         user_ref.pop('password', None)
     return user_ref
 
+
 class UserLdap(LdapWrapper):
     options_name = "user"
 
-CONF = config.CONF
 
 class Identity(SQLIdentity):
     def authenticate(self, user_id=None, tenant_id=None, password=None):

@@ -14,12 +14,15 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-from keystone import config
-from keystone.common import logging
-conf = config.CONF
 import ldap
 import ldap.dn
 import ldap.filter
+
+from keystone import config
+from keystone.common import logging
+
+conf = config.CONF
+
 
 def ldap2py(val):
     LDAP_VALUES = {
@@ -40,7 +43,7 @@ def ldap2py(val):
 class LdapWrapper(object):
     DEFAULT_TREE_DN = "ou=Users,dc=example,dc=com"
     DEFAULT_ID_ATTR = "uid"
-    DEFAULT_OBJECTCLASS = "top" 
+    DEFAULT_OBJECTCLASS = "top"
     attribute_mapping = {}
 
     def __init__(self):
@@ -48,21 +51,21 @@ class LdapWrapper(object):
         self.user = conf.ldap.user
         self.password = conf.ldap.password
 
-        if self.options_name is not None:                                       
-            dn = '%s_tree_dn' % self.options_name                               
+        if self.options_name is not None:
+            dn = '%s_tree_dn' % self.options_name
             self.tree_dn = (getattr(conf.ldap, dn) or self.DEFAULT_TREE_DN)
-                                                                                
-            idatt = '%s_id_attribute' % self.options_name                       
-            self.id_attr = getattr(conf.ldap, idatt) or self.DEFAULT_ID_ATTR    
-                                                                                
-            objclass = '%s_objectclass' % self.options_name                     
-            self.object_class = (getattr(conf.ldap, objclass)                   
-                                 or self.DEFAULT_OBJECTCLASS)                   
+
+            idatt = '%s_id_attribute' % self.options_name
+            self.id_attr = getattr(conf.ldap, idatt) or self.DEFAULT_ID_ATTR
+
+            objclass = '%s_objectclass' % self.options_name
+            self.object_class = (getattr(conf.ldap, objclass)
+                                 or self.DEFAULT_OBJECTCLASS)
             for attr_map in [x for x in conf.ldap.keys()
                                if '%s_attrmap_' % self.options_name in x]:
                 m = getattr(conf.ldap, attr_map) or None
                 if m:
-                    self.attribute_mapping[attr_map.split('_')[-1]] = m 
+                    self.attribute_mapping[attr_map.split('_')[-1]] = m
 
     def valid_dn(self, dn):
         try:
@@ -75,13 +78,16 @@ class LdapWrapper(object):
             user = self.user
         if not password:
             password = self.password
+        conn = None
         try:
             conn = ldap.initialize(self.url)
             conn.simple_bind_s(user, password)
-            return conn
         except (ldap.INVALID_CREDENTIALS, ldap.INVALID_DN_SYNTAX):
             logging.debug("Unable to connect to %s with %s" % (self.url, user))
-            return None
+        except ldap.SERVER_DOWN:
+            logging.debug("Unable to connect to %s, server is down" % self.url)
+        finally:
+            return conn
 
     def _ldap_res_to_dict(self, res):
         obj = {'id': res[0]}
@@ -147,4 +153,3 @@ class LdapWrapper(object):
         if not conn:
             return []
         return self._ldap_search(conn, user, ldap.SCOPE_BASE)[0]
-
