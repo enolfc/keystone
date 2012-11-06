@@ -144,6 +144,16 @@
 # role_allow_update = True
 # role_allow_delete = True
 
+[voms]
+#vomsdir_path = /etc/grid-security/vomsdir
+#ca_path = /etc/grid-security/certificates
+#voms_policy = /etc/keystone/voms.json
+#vomsapi_lib = libvomsapi.so.1
+#autocreate_users = True
+
+#[filter:vomsauthn]
+#paste.filter_factory = keystone.middleware.voms_authn:VomsAuthNMiddleware.factory
+
 [filter:debug]
 paste.filter_factory = keystone.common.wsgi:Debug.factory
 
@@ -187,6 +197,7 @@ paste.app_factory = keystone.service:public_app_factory
 paste.app_factory = keystone.service:admin_app_factory
 
 [pipeline:public_api]
+#pipeline = stats_monitoring url_normalize token_auth admin_token_auth xml_body json_body vomsauthn debug ec2_extension user_crud_extension public_service
 pipeline = stats_monitoring url_normalize token_auth admin_token_auth xml_body json_body debug ec2_extension user_crud_extension public_service
 
 [pipeline:admin_api]
