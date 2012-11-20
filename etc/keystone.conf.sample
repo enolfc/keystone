@@ -116,7 +116,10 @@
 # user_name_attribute = sn
 # user_mail_attribute = email
 # user_pass_attribute = userPassword
-# user_attribute_ignore = tenant_id,enabled,tenants
+# user_enabled_attribute = enabled
+# user_enabled_mask = 0
+# user_enabled_default = True
+# user_attribute_ignore = tenant_id,tenants
 # user_allow_create = True
 # user_allow_update = True
 # user_allow_delete = True
@@ -128,7 +131,8 @@
 # tenant_member_attribute = member
 # tenant_name_attribute = ou
 # tenant_desc_attribute = desc
-# tenant_attribute_ignore = enabled
+# tenant_enabled_attribute = enabled
+# tenant_attribute_ignore =
 # tenant_allow_create = True
 # tenant_allow_update = True
 # tenant_allow_delete = True
@@ -193,6 +197,9 @@ paste.filter_factory = keystone.contrib.stats:StatsExtension.factory
 [app:public_service]
 paste.app_factory = keystone.service:public_app_factory
 
+[app:service_v3]
+paste.app_factory = keystone.service:v3_app_factory
+
 [app:admin_service]
 paste.app_factory = keystone.service:admin_app_factory
 
@@ -202,6 +209,9 @@ pipeline = stats_monitoring url_normalize token_auth admin_token_auth xml_body j
 
 [pipeline:admin_api]
 pipeline = stats_monitoring url_normalize token_auth admin_token_auth xml_body json_body debug stats_reporting ec2_extension s3_extension crud_extension admin_service
+
+[pipeline:api_v3]
+pipeline = stats_monitoring url_normalize token_auth admin_token_auth xml_body json_body debug stats_reporting ec2_extension s3_extension service_v3
 
 [app:public_version_service]
 paste.app_factory = keystone.service:public_version_app_factory
@@ -218,9 +228,11 @@ pipeline = stats_monitoring url_normalize xml_body admin_version_service
 [composite:main]
 use = egg:Paste#urlmap
 /v2.0 = public_api
+/v3 = api_v3
 / = public_version_api
 
 [composite:admin]
 use = egg:Paste#urlmap
 /v2.0 = admin_api
+/v3 = api_v3
 / = admin_version_api

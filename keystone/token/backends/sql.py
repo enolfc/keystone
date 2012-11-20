@@ -18,7 +18,6 @@ import copy
 import datetime
 
 
-from keystone.common import cms
 from keystone.common import sql
 from keystone import exception
 from keystone.openstack.common import timeutils
@@ -27,26 +26,11 @@ from keystone import token
 
 class TokenModel(sql.ModelBase, sql.DictBase):
     __tablename__ = 'token'
+    attributes = ['id', 'expires']
     id = sql.Column(sql.String(64), primary_key=True)
     expires = sql.Column(sql.DateTime(), default=None)
     extra = sql.Column(sql.JsonBlob())
     valid = sql.Column(sql.Boolean(), default=True)
-
-    @classmethod
-    def from_dict(cls, token_dict):
-        # shove any non-indexed properties into extra
-        extra = copy.deepcopy(token_dict)
-        data = {}
-        for k in ('id', 'expires'):
-            data[k] = extra.pop(k, None)
-        data['extra'] = extra
-        return cls(**data)
-
-    def to_dict(self):
-        out = copy.deepcopy(self.extra)
-        out['id'] = self.id
-        out['expires'] = self.expires
-        return out
 
 
 class Token(sql.Base, token.Driver):
@@ -98,14 +82,16 @@ class Token(sql.Base, token.Driver):
         token_references = query.filter_by(valid=True)
         for token_ref in token_references:
             token_ref_dict = token_ref.to_dict()
-            if 'user' not in token_ref_dict:
+            user = token_ref_dict.get('user')
+            if not user:
                 continue
-            if token_ref_dict['user'].get('id') != user_id:
+            if user.get('id') != user_id:
                 continue
             if tenant_id is not None:
-                if 'tenant' not in token_ref_dict:
+                tenant = token_ref_dict.get('tenant')
+                if not tenant:
                     continue
-                if token_ref_dict['tenant'].get('id') != tenant_id:
+                if tenant.get('id') != tenant_id:
                     continue
             tokens.append(token_ref['id'])
         return tokens

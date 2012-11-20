@@ -22,6 +22,7 @@ import nose.exc
 
 from keystone import test
 from keystone.openstack.common import jsonutils
+from keystone.openstack.common import timeutils
 
 
 import default_fixtures
@@ -139,6 +140,14 @@ class KeystoneClientTests(object):
         self.assertRaises(client_exceptions.Unauthorized,
                           self._client, token=token,
                           tenant_id=uuid.uuid4().hex)
+
+    def test_authenticate_token_invalid_tenant_name(self):
+        from keystoneclient import exceptions as client_exceptions
+        client = self.get_client()
+        token = client.auth_token
+        self.assertRaises(client_exceptions.Unauthorized,
+                          self._client, token=token,
+                          tenant_name=uuid.uuid4().hex)
 
     def test_authenticate_token_tenant_name(self):
         client = self.get_client()
@@ -387,16 +396,15 @@ class KeystoneClientTests(object):
 
     def test_token_expiry_maintained(self):
         foo_client = self.get_client(self.user_foo)
-        orig_token = foo_client.service_catalog.catalog['token']
 
-        time.sleep(1.01)
+        orig_token = foo_client.service_catalog.catalog['token']
+        time.sleep(.5)
         reauthenticated_token = foo_client.tokens.authenticate(
             token=foo_client.auth_token)
-        #Don't compare seconds, as there is rounding error
-        original = orig_token['expires'][:-3]
-        reissued = reauthenticated_token.expires[:-3]
 
-        self.assertEquals(original, reissued)
+        self.assertCloseEnoughForGovernmentWork(
+            timeutils.parse_isotime(orig_token['expires']),
+            timeutils.parse_isotime(reauthenticated_token.expires))
 
     def test_user_create_update_delete(self):
         from keystoneclient import exceptions as client_exceptions
@@ -797,12 +805,12 @@ class KcMasterTestCase(CompatTestCase, KeystoneClientTests):
         client = self.get_client(admin=True)
         client.roles.add_user_role(tenant=self.tenant_baz['id'],
                                    user=self.user_two['id'],
-                                   role=self.role_useless['id'])
+                                   role=self.role_member['id'])
         user_refs = client.tenants.list_users(tenant=self.tenant_baz['id'])
         self.assert_(self.user_two['id'] in [x.id for x in user_refs])
         client.roles.remove_user_role(tenant=self.tenant_baz['id'],
                                       user=self.user_two['id'],
-                                      role=self.role_useless['id'])
+                                      role=self.role_member['id'])
         user_refs = client.tenants.list_users(tenant=self.tenant_baz['id'])
         self.assert_(self.user_two['id'] not in [x.id for x in user_refs])
 
@@ -813,12 +821,12 @@ class KcMasterTestCase(CompatTestCase, KeystoneClientTests):
                           client.roles.add_user_role,
                           tenant=uuid.uuid4().hex,
                           user=self.user_foo['id'],
-                          role=self.role_useless['id'])
+                          role=self.role_member['id'])
         self.assertRaises(client_exceptions.NotFound,
                           client.roles.add_user_role,
                           tenant=self.tenant_baz['id'],
                           user=uuid.uuid4().hex,
-                          role=self.role_useless['id'])
+                          role=self.role_member['id'])
         self.assertRaises(client_exceptions.NotFound,
                           client.roles.add_user_role,
                           tenant=self.tenant_baz['id'],
@@ -832,12 +840,12 @@ class KcMasterTestCase(CompatTestCase, KeystoneClientTests):
                           client.roles.remove_user_role,
                           tenant=uuid.uuid4().hex,
                           user=self.user_foo['id'],
-                          role=self.role_useless['id'])
+                          role=self.role_member['id'])
         self.assertRaises(client_exceptions.NotFound,
                           client.roles.remove_user_role,
                           tenant=self.tenant_baz['id'],
                           user=uuid.uuid4().hex,
-                          role=self.role_useless['id'])
+                          role=self.role_member['id'])
         self.assertRaises(client_exceptions.NotFound,
                           client.roles.remove_user_role,
                           tenant=self.tenant_baz['id'],
@@ -847,7 +855,7 @@ class KcMasterTestCase(CompatTestCase, KeystoneClientTests):
                           client.roles.remove_user_role,
                           tenant=self.tenant_baz['id'],
                           user=self.user_foo['id'],
-                          role=self.role_useless['id'])
+                          role=self.role_member['id'])
 
     def test_tenant_list_marker(self):
         client = self.get_client()
@@ -1004,7 +1012,7 @@ class KcEssex3TestCase(CompatTestCase, KeystoneClientTests):
         client = self.get_client(admin=True)
         client.roles.add_user_to_tenant(tenant_id=self.tenant_baz['id'],
                                         user_id=self.user_two['id'],
-                                        role_id=self.role_useless['id'])
+                                        role_id=self.role_member['id'])
         role_refs = client.roles.get_user_role_refs(
             user_id=self.user_two['id'])
         self.assert_(self.tenant_baz['id'] in [x.tenantId for x in role_refs])
@@ -1014,7 +1022,7 @@ class KcEssex3TestCase(CompatTestCase, KeystoneClientTests):
         roleref_refs = client.roles.get_user_role_refs(
             user_id=self.user_two['id'])
         for roleref_ref in roleref_refs:
-            if (roleref_ref.roleId == self.role_useless['id']
+            if (roleref_ref.roleId == self.role_member['id']
                     and roleref_ref.tenantId == self.tenant_baz['id']):
                 # use python's scope fall through to leave roleref_ref set
                 break
